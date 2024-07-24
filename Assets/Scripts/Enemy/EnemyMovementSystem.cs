@@ -1,4 +1,5 @@
 using Unity.Burst;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -10,6 +11,7 @@ using UnityEngine;
 public partial struct EnemyMovementSystem : ISystem
 {
     private JobHandle jobHandler;
+ 
     private void OnCreate(ref SystemState state)
     {
         state.RequireForUpdate<EnemyMovementComponent>();
@@ -23,7 +25,7 @@ public partial struct EnemyMovementSystem : ISystem
     }
 }
 
-[UpdateAfter(typeof(EnemyMovementSystem))]
+[UpdateAfter(typeof(MisileMovementSystem))]
 public partial struct EnemySpawnSystem : ISystem
 {  
     private float timeBetweenSpawn, timer;
@@ -43,11 +45,6 @@ public partial struct EnemySpawnSystem : ISystem
         foreach ((RefRO<LocalTransform> localTransform, RefRO<EnemyInfoComponent> enemyInfo, RefRO<EnemyMovementComponent> enemyMove) 
             in SystemAPI.Query<RefRO<LocalTransform>, RefRO<EnemyInfoComponent>, RefRO<EnemyMovementComponent>>().WithAll<EnemyMovementComponent>())
         {
-            if(enemyInfo.ValueRO.health <= 0)
-            {
-                entityCommandBuffer.DestroyEntity(enemyMove.ValueRO.thisEntity);
-            }
-
             timer += SystemAPI.Time.DeltaTime;
             if (timer < timeBetweenSpawn) return;
             timer = 0.0f;

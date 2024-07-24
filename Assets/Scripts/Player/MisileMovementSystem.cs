@@ -4,46 +4,65 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using Unity.Collections;
 using UnityEngine;
+using System;
 
-public partial struct MisileMovementSystem : ISystem 
+public partial class MisileMovementSystem : SystemBase 
 {
+    public Action<int> UpdatePlayerHealth;
     private Entity entity;
-    private void OnCreate(ref SystemState state)
+    protected override void OnCreate()
     {
-        state.RequireForUpdate<MissileComponent>();
+        RequireForUpdate<MissileComponent>();
     }
 
-    [BurstCompile]
-    private void OnUpdate(ref SystemState state)
+    protected override void OnUpdate()
     {
         MissileMovementJob moveJob = new MissileMovementJob { deltaTime = SystemAPI.Time.DeltaTime };
         moveJob.ScheduleParallel();  
         
-        EntityCommandBuffer entityCommandBuffer = new EntityCommandBuffer(state.WorldUpdateAllocator);
+        EntityCommandBuffer entityCommandBuffer = new EntityCommandBuffer(WorldUpdateAllocator);
 
         foreach (RefRO<MissileComponent> missileComponent in SystemAPI.Query<RefRO<MissileComponent>>().WithAll<MissileComponent>())
         {
             if (missileComponent.ValueRO.isDead)
             {              
                 Entity collideEntity = missileComponent.ValueRO.collideEntity;
-                if (state.EntityManager.HasComponent<PlayerInfoComponent>(collideEntity))
+                if (EntityManager.HasComponent<PlayerInfoComponent>(collideEntity))
                 {
-                    PlayerInfoComponent playerInfo = state.EntityManager.GetComponentData<PlayerInfoComponent>(collideEntity);
-                    int newHealth = playerInfo.health - 1;
-                    state.EntityManager.SetComponentData(collideEntity, new PlayerInfoComponent { health = newHealth });
+                    PlayerInfoComponent playerInfo = EntityManager.GetComponentData<PlayerInfoComponent>(collideEntity);
+
+                    if(playerInfo.health > 1)
+                    {
+                        int newHealth = playerInfo.health - 1;
+                        EntityManager.SetComponentData(collideEntity, new PlayerInfoComponent { health = newHealth });
+                        UpdatePlayerHealth?.Invoke(newHealth);
+                    }
+                    else
+                    {
+                        entityCommandBuffer.DestroyEntity(collideEntity);
+                        UpdatePlayerHealth?.Invoke(0);
+                    }
+                  
                     Debug.Log("Player " + playerInfo.health);                   
                 }
-                if (state.EntityManager.HasComponent<EnemyInfoComponent>(collideEntity))
+                if (EntityManager.HasComponent<EnemyInfoComponent>(collideEntity))
                 {
-                    EnemyInfoComponent enemyInfo = state.EntityManager.GetComponentData<EnemyInfoComponent>(collideEntity);
-                    int newHealth = enemyInfo.health - 1;
-                    state.EntityManager.SetComponentData(collideEntity, new EnemyInfoComponent { health = newHealth });
+                    EnemyInfoComponent enemyInfo = EntityManager.GetComponentData<EnemyInfoComponent>(collideEntity);
+                    if(enemyInfo.health > 1)
+                    {
+                        int newHealth = enemyInfo.health - 1;
+                        EntityManager.SetComponentData(collideEntity, new EnemyInfoComponent { health = newHealth });
+                    }
+                    else
+                    {
+                        entityCommandBuffer.DestroyEntity(collideEntity);
+                    }
                     Debug.Log("Enemy" + enemyInfo.health);
                 }
                 entityCommandBuffer.DestroyEntity(missileComponent.ValueRO.thisEntity);
             }
         }
-        entityCommandBuffer.Playback(state.EntityManager);
+        entityCommandBuffer.Playback(EntityManager);
     }
 }
 
