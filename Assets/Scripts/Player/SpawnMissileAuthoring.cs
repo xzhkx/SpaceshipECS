@@ -10,9 +10,10 @@ public class SpawnMissileAuthoring : MonoBehaviour
         public override void Bake(SpawnMissileAuthoring authoring)
         {
             Entity entity = GetEntity(TransformUsageFlags.None);
+           
             AddComponent(entity, new SpawnMissileComponent
             {
-                missileEntity = GetEntity(authoring.missilePrefab, TransformUsageFlags.Dynamic),
+                missileEntity = GetEntity(authoring.missilePrefab, TransformUsageFlags.Dynamic),   
                 enemyMissileEntity = GetEntity(authoring.enemyMissilePrefab, TransformUsageFlags.Dynamic),
             });
         }
@@ -21,6 +22,6 @@ public class SpawnMissileAuthoring : MonoBehaviour
 
 public struct SpawnMissileComponent : IComponentData
 {
-    public Entity missileEntity;
-    public Entity enemyMissileEntity;
+    public Entity missileEntity, enemyMissileEntity;
+    
 }

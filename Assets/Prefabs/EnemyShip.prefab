@@ -100,6 +100,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveSpeed: 5
   health: 20
+  missile: {fileID: 5249842508158149124, guid: 05fa1a84b6548a74da71c5d5ae7090e4, type: 3}
 --- !u!114 &9099330038815306483
 MonoBehaviour:
   m_ObjectHideFlags: 0

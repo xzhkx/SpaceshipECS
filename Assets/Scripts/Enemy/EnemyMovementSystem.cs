@@ -39,17 +39,18 @@ public partial struct EnemySpawnSystem : ISystem
     [BurstCompile]   
     private void OnUpdate(ref SystemState state)
     {
-        EntityCommandBuffer entityCommandBuffer = new EntityCommandBuffer(state.WorldUpdateAllocator);
+        EntityCommandBuffer entityCommandBuffer = new EntityCommandBuffer(Allocator.Temp);
+        timer += SystemAPI.Time.DeltaTime;
+        if (timer < timeBetweenSpawn) return;
+        timer = 0.0f;
+
         SpawnMissileComponent spawnMissileComponent = SystemAPI.GetSingleton<SpawnMissileComponent>();
 
-        foreach ((RefRO<LocalTransform> localTransform, RefRO<EnemyInfoComponent> enemyInfo, RefRO<EnemyMovementComponent> enemyMove) 
-            in SystemAPI.Query<RefRO<LocalTransform>, RefRO<EnemyInfoComponent>, RefRO<EnemyMovementComponent>>().WithAll<EnemyMovementComponent>())
+        foreach ((RefRO<LocalTransform> localTransform, RefRO<EnemyInfoComponent> enemyInfo)
+            in SystemAPI.Query<RefRO<LocalTransform>, RefRO<EnemyInfoComponent>>().WithAll<EnemyMovementComponent>())
         {
-            timer += SystemAPI.Time.DeltaTime;
-            if (timer < timeBetweenSpawn) return;
-            timer = 0.0f;
-
             Entity missile1 = entityCommandBuffer.Instantiate(spawnMissileComponent.enemyMissileEntity);
+            Debug.Log("spawn");
             entityCommandBuffer.SetComponent(missile1, new LocalTransform
             {
                 Position = localTransform.ValueRO.Position + new float3(-3.8f, 0.25f, 2f),
@@ -64,8 +65,8 @@ public partial struct EnemySpawnSystem : ISystem
                 Rotation = quaternion.identity,
                 Scale = 1f
             });
+            
         }
-
         entityCommandBuffer.Playback(state.EntityManager);
     }
 }
